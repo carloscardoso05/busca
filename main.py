@@ -1,4 +1,5 @@
 import random as rd
+from tqdm import trange
 
 type Posicoes = list[int]
 
@@ -33,19 +34,17 @@ def ataca_algum(posicoes: Posicoes, rainha: int) -> bool:
     return ataca_diagonal(posicoes, rainha) or ataca_horizontal(posicoes, rainha)
 
 
-# def pontuar_posicoes(posicoes: Posicoes) -> int:
-#     pontos = 0
-#     for rainha in range(8):
-#         if not ataca_algum(posicoes, rainha):
-#             pontos += 1
-#     return pontos
-
 def pontuar_posicoes(posicoes: Posicoes) -> int:
+    """
+    Quanto maior a pontuação, melhor, tente maximizá-la (o máximo é 0)
+    """
     n = len(posicoes)
     total = 0
     for i in range(n):
         for j in range(i + 1, n):
-            if posicoes[i] == posicoes[j] or abs(posicoes[i] - posicoes[j]) == abs(i - j):
+            if posicoes[i] == posicoes[j] or abs(posicoes[i] - posicoes[j]) == abs(
+                i - j
+            ):
                 total -= 1
     return total
 
@@ -72,22 +71,42 @@ def possiveis_posicoes(posicoes: Posicoes) -> list[Posicoes]:
     return todas_posicoes
 
 
-def hill_climbing() -> Posicoes:
+def hill_climbing_estocastico(iteracoes: int | None = None) -> Posicoes:
+    assert iteracoes is None or iteracoes > 0, (
+        "O número de iterações deve ser None ou um inteiro positivo"
+    )
     posicoes = posicoes_iniciais()
-    while True:
+    pontuacao_atual = pontuar_posicoes(posicoes)
+    while iteracoes is None or iteracoes > 0:
+        if iteracoes is not None:
+            iteracoes -= 1
         filhos = possiveis_posicoes(posicoes)
-        candidatos = [filho for filho in filhos if pontuar_posicoes(filho) > pontuar_posicoes(posicoes)]
-        if not candidatos:
-            print("melhor:", posicoes)
-            print("pontos:", pontuar_posicoes(posicoes))
-            print("correta:", solucao_eh_correta(posicoes))
-            for linha in range(8):
-                row = ["R" if posicoes[coluna] == linha else "□" for coluna in range(8)]
-                print(" ".join(row))
-            return posicoes
-        sucessor = rd.choice(candidatos)
-        posicoes = sucessor
+        pontuacoes = [pontuar_posicoes(f) for f in filhos]
+        melhores = [
+            filho
+            for filho, pontuacao in zip(filhos, pontuacoes)
+            if pontuacao > pontuacao_atual
+        ]
+        if not melhores:
+            break
+        posicoes = rd.choice(melhores)
+        pontuacao_atual = pontuar_posicoes(posicoes)
+        if pontuacao_atual == 0:
+            break
+    return posicoes
 
 
 if __name__ == "__main__":
-    print(hill_climbing())
+    max_locais = 0
+    max_globais = 0
+    total = 2000
+    for _ in trange(int(total), desc="Progresso"):
+        res = hill_climbing_estocastico()
+        if solucao_eh_correta(res):
+            max_globais += 1
+        else:
+            max_locais += 1
+    print("Total:", max_globais)
+    print("Max globais:", max_globais)
+    print("Max locais:", max_locais)
+    print(f"Taxa: {(max_globais * 100 / total):.2f}%")
