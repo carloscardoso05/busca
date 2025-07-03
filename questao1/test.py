@@ -1,5 +1,5 @@
 import unittest
-from main import posicoes_iniciais, ataca_horizontal, ataca_diagonal
+from questao1.questao1 import posicoes_iniciais, ataca_horizontal, ataca_diagonal
 
 
 class Testes(unittest.TestCase):
