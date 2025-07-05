@@ -1,4 +1,5 @@
 from random import getrandbits, randint
+from time import perf_counter
 
 def eh_diagonal(candidato: list[int], colA: int, colB: int) -> bool:
     dist = colB - colA
@@ -86,14 +87,47 @@ def algoritmo_genetico(num_individuos=20, taxa_cruzamento=80, taxa_mutacao=3, ma
         populacao = selecao_elitista(populacao, filhos, num_individuos)
         fitness_populacao = [fitness(individuo) for individuo in populacao]
         geracao += 1
-    return max([fitness(individuo) for individuo in populacao])
+    melhor_individuo = []
+    max_fitness = 0
+    for i in range(num_individuos):
+        if fitness_populacao[i] > max_fitness:
+            melhor_individuo = populacao[i]
+            max_fitness = fitness_populacao[i] 
+    return melhor_individuo, max_fitness, geracao
 
 
-max_global = 0
-max_local = 0
-for i in range(1000):
-    if (algoritmo_genetico() == 28):
-        max_global += 1
-    else:
-        max_local += 1
-print(max_global, max_local)
+num_iter = 50
+melhores_solucoes = []
+tempos_exec = []
+geracoes = []
+media_num_geracoes = 0
+media_tempo_exec = 0
+for i in range(num_iter):
+    temp_ini = perf_counter()
+    individuo, individuo_fitness, num_geracoes = algoritmo_genetico()
+    tempos_exec.append(perf_counter() - temp_ini)
+    media_tempo_exec += tempos_exec[len(tempos_exec) - 1]
+    geracoes.append(num_geracoes)
+    media_num_geracoes += num_geracoes
+    if individuo_fitness == 28 and len(melhores_solucoes) < 5:
+        melhores_solucoes.append(individuo)
+media_tempo_exec /= num_iter
+media_num_geracoes /= num_iter
+
+desvio_tempo_exec = 0
+desvio_num_geracoes = 0
+for i in range(num_iter):
+    desvio_tempo_exec += (tempos_exec[i] - media_tempo_exec) ** 2
+    desvio_num_geracoes += (geracoes[i] - media_num_geracoes) ** 2
+desvio_tempo_exec = (desvio_tempo_exec / num_iter) ** 0.5
+desvio_num_geracoes = (desvio_num_geracoes / num_iter) ** 0.5
+
+print('As 5 melhores soluções:')
+print(f'{melhores_solucoes[0]}, {melhores_solucoes[1]}, {melhores_solucoes[2]}, {melhores_solucoes[3]}, {melhores_solucoes[4]}\n')
+
+print(f'A média do tempo de execução: {media_tempo_exec:.2f} segundos')
+print(f'O desvio padrão do tempo de execução: {desvio_tempo_exec:.2f} segundos\n')
+
+print(f'A média do número de iterações: {media_num_geracoes:.2f} iterações')
+print(f'O desvio padrão do número de iterações: {desvio_num_geracoes:.2f} iterações')
+
